@@ -10,8 +10,8 @@ def peeldecomp(graph):
         kcores[ind] = core[ind]
         filt = graph.new_vertex_property('bool', True)
         for v in core[ind]:
-            filt[v] = False        
-        graph.set_vertex_filter(filt) 
+            filt[v] = False
+        graph.set_vertex_filter(filt)
         core = kcore_decomposition(graph)
 
     graph.set_vertex_filter(vfilt,inv)
@@ -59,7 +59,7 @@ def split(graph, seperating_set):
     for v in seperating_set:
         comps[v] = -1
     return comps
-    
+
 def pseudo_min_seperating_set(graph):
     if graph.num_edges() < 1:
         return []
@@ -161,9 +161,9 @@ def pseudo_min_seperating_set(graph):
     if len(hist) <= 1:
         overlap = None
     graph.set_vertex_filter(vfilt,inv)
-    
+
     # smallest found seperating set
-    if overlap: 
+    if overlap:
         ss = min([overlap,vmin,nvmin], key=len)
     else:
         ss = min([vmin,nvmin], key=len)
@@ -188,7 +188,7 @@ def pseudo_min_seperating_set(graph):
     #        ndegree[v] = 1
     #graph_draw(graph, radial_tree_layout(graph, root), vertex_fill_color=degree, edge_pen_width=treemap)
     #graph_draw(graph, radial_tree_layout(graph, newroot), vertex_fill_color=ndegree, edge_pen_width=ntreemap)
-    
+
     #print(ss)
     return ss
 
@@ -211,7 +211,7 @@ def kcompdecomp(graph,node=None):
         kcompdecomp(graph,node)
         graph.set_vertex_filter(vfilt,inv)
         return node
-        
+
     graph.set_vertex_filter(node.component)
     ss = pseudo_min_seperating_set(graph)
     comps = split(graph,ss)
@@ -260,7 +260,7 @@ def middleout(graph):
         for v in verts:
             filt[v] = True
         cores.append(filt)
-        
+
     # bottom bfs
     # vbottom = graph_tool.util.find_vertex(graph,layers,max_layer)
     # newroot = min(vbottom, key= lambda v : v.out_degree())
@@ -292,7 +292,7 @@ def middleout(graph):
             degree[v] = 1
     graph_draw(graph, radial_tree_layout(graph, root), vertex_fill_color=degree, edge_pen_width=treemap)
     #graph_draw(graph, radial_tree_layout(graph, newroot), vertex_fill_color=ndegree, edge_pen_width=ntreemap)
-    
+
     return cores
 
 def stats(graph):
@@ -302,7 +302,7 @@ def stats(graph):
         peelvalue = min(cores)
     else:
         peelvalue = 0
-    
+
     pseudo_d, end_pts = graph_tool.topology.pseudo_diameter(graph)
     root = min(end_pts, key= lambda v : v.out_degree())
     pred = graph.new_vertex_property('int',-1)

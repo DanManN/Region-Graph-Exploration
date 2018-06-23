@@ -89,13 +89,13 @@ while True:
     elif parse[0] in ('sessionsave', 'ss'):
         try:
             saveFile = open(parse[1],'wb')
-            pickle.dump((g,glayers,gfilts,ktree,cores),saveFile) 
+            pickle.dump((g,glayers,gfilts,ktree,cores),saveFile)
         except IndexError:
             print('Specifiy save file!')
     elif parse[0] in ('sessionload', 'sl'):
         try:
             loadFile = open(parse[1],'rb')
-            g,glayers,gfilts,ktree,cores = pickle.load(loadFile) 
+            g,glayers,gfilts,ktree,cores = pickle.load(loadFile)
         except IndexError:
             print('Specifiy save file!')
     elif parse[0] in ('load', 'ld'):
@@ -127,7 +127,7 @@ while True:
         except IndexError:
             pass
         ktree = kcompdecomp(g)
-    elif parse[0] in ('leaves','lv'): 
+    elif parse[0] in ('leaves','lv'):
         try:
             info = parse[1]
         except IndexError:
@@ -153,7 +153,7 @@ while True:
         for c in cores:
             g.set_vertex_filter(c)
             pos = graph_tool.draw.arf_layout(g)
-            if info == 'draw': 
+            if info == 'draw':
                 graph_draw(g, pos)
             elif info == 'stats':
                 stat = stats(g)
