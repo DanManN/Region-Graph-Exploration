@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 from kcompdecomp import *
+from mna import *
 from treevis import watchTree
 from app.GraphManager import GraphManager
 from random import randint
@@ -69,6 +70,7 @@ def walk(tree,info):
 glayers,gfilts = peel(g)
 ktree = None
 cores = []
+resistances = None
 
 while True:
     cmd = raw_input("(k) $ ")
@@ -84,18 +86,18 @@ while True:
         except IndexError:
             pos = graph_tool.draw.arf_layout(g)
             graph_draw(g, pos)
-        except ValueError:
-            print('Nan')
+        except ValueError, KeyError:
+            print('No such layer: ' + parse[1])
     elif parse[0] in ('sessionsave', 'ss'):
         try:
-            saveFile = open(parse[1],'wb')
-            pickle.dump((g,glayers,gfilts,ktree,cores),saveFile)
+            save_file = open(parse[1],'wb')
+            pickle.dump((g,glayers,gfilts,ktree,cores,resistances),save_file)
         except IndexError:
             print('Specifiy save file!')
     elif parse[0] in ('sessionload', 'sl'):
         try:
-            loadFile = open(parse[1],'rb')
-            g,glayers,gfilts,ktree,cores = pickle.load(loadFile)
+            load_file = open(parse[1],'rb')
+            g,glayers,gfilts,ktree,cores,resistances = pickle.load(load_file)
         except IndexError:
             print('Specifiy save file!')
     elif parse[0] in ('load', 'ld'):
@@ -106,13 +108,17 @@ while True:
     elif parse[0] in ('order','o'):
         try:
             print(glayers[int(parse[1])].num_vertices())
-        except Exception:
-            print('Layer does not exist!')
+        except IndexError:
+            print(g.num_vertices())
+        except ValueError, KeyError:
+            print('No such layer: ' + parse[1])
     elif parse[0] in ('size','s'):
         try:
             print(glayers[int(parse[1])].num_edges())
-        except IndexError, ValueError:
-            print('Layer does not exist!')
+        except IndexError:
+            print(g.num_edges())
+        except ValueError, KeyError:
+            print('No such layer: ' + parse[1])
     elif parse[0] in ('random','r'):
         try:
             g = randgraph(int(parse[1]),int(parse[2]),int(parse[3]))
@@ -122,10 +128,10 @@ while True:
     elif parse[0] in ('kcompdecomp','k'):
         try:
             g.set_vertex_filter(gfilts[int(parse[1])])
-        except ValueError:
-            print('Nan')
         except IndexError:
             pass
+        except ValueError, KeyError:
+            print('No such layer: ' + parse[1])
         ktree = kcompdecomp(g)
     elif parse[0] in ('leaves','lv'):
         try:
@@ -135,15 +141,15 @@ while True:
         walk(ktree,info)
     elif parse[0] in ('treeview','t'):
         if ktree:
-            watchTree(ktree)
+            watchTree(ktree,resistances)
         g.clear_filters()
     elif parse[0] in ('cores','c'):
         try:
             g.set_vertex_filter(gfilts[int(parse[1])])
-        except ValueError:
-            print('Nan')
         except IndexError:
             pass
+        except ValueError, KeyError:
+            print('No such layer: ' + parse[1])
         cores = middleout(g)
     elif parse[0] in ('coreview','cv'):
         try:
@@ -160,3 +166,14 @@ while True:
                 print('peel_value: ' + str(stat['peel_value']))
                 print('fixed_point?: ' + str(stat['is_fixed_point']))
         g.clear_filters()
+    elif parse[0] in ('equiresistance','er'):
+        try:
+            g.set_vertex_filter(gfilts[int(parse[1])])
+        except IndexError:
+            pass
+        except ValueError, KeyError:
+            print('No such layer: ' + parse[1])
+        resistances = getEdgeResistances(g)
+    elif parse[0] in ('equiresistanceview','erv'):
+        if resistances:
+            graph_draw(g, arf_layout(g), edge_color=resistances)
