@@ -4,6 +4,7 @@ from mna import *
 from treevis import watchTree
 from app.GraphManager import GraphManager
 from random import randint
+from math import log10
 import sys
 import pickle
 
@@ -71,6 +72,8 @@ glayers,gfilts = peel(g)
 ktree = None
 cores = []
 resistances = None
+vresistances = None
+posres = None
 
 while True:
     cmd = raw_input("(k) $ ")
@@ -91,13 +94,13 @@ while True:
     elif parse[0] in ('sessionsave', 'ss'):
         try:
             save_file = open(parse[1],'wb')
-            pickle.dump((g,glayers,gfilts,ktree,cores,resistances),save_file)
+            pickle.dump((g,glayers,gfilts,ktree,cores,resistances,vresistances,posres),save_file)
         except IndexError:
             print('Specifiy save file!')
     elif parse[0] in ('sessionload', 'sl'):
         try:
             load_file = open(parse[1],'rb')
-            g,glayers,gfilts,ktree,cores,resistances = pickle.load(load_file)
+            g,glayers,gfilts,ktree,cores,resistances,vresistances,posres = pickle.load(load_file)
         except IndexError:
             print('Specifiy save file!')
     elif parse[0] in ('load', 'ld'):
@@ -139,9 +142,10 @@ while True:
         except IndexError:
             info = 'draw'
         walk(ktree,info)
+        g.clear_filters()
     elif parse[0] in ('treeview','t'):
         if ktree:
-            watchTree(ktree,resistances)
+            watchTree(ktree,resistances,vresistances,posres)
         g.clear_filters()
     elif parse[0] in ('cores','c'):
         try:
@@ -150,7 +154,7 @@ while True:
             pass
         except ValueError, KeyError:
             print('No such layer: ' + parse[1])
-        cores = middleout(g)
+        cores = middleout(g, resistances)
     elif parse[0] in ('coreview','cv'):
         try:
             info = parse[1]
@@ -174,6 +178,50 @@ while True:
         except ValueError, KeyError:
             print('No such layer: ' + parse[1])
         resistances = getEdgeResistances(g)
+        g.clear_filters()
     elif parse[0] in ('equiresistanceview','erv'):
         if resistances:
-            graph_draw(g, arf_layout(g), edge_color=resistances)
+            try:
+                subg = glayers[int(parse[1])]
+                graph_draw(subg, arf_layout(subg), edge_color=resistances)
+            except IndexError:
+                graph_draw(g, arf_layout(g), edge_color=resistances)
+            except ValueError, KeyError:
+                print('No such layer: ' + parse[1])
+    elif parse[0] in ('mnadecomp','md'):
+        try:
+            subg = glayers[int(parse[1])]
+            vresistances = mnadecomp(subg)
+        except IndexError:
+            vresistances = mnadecomp(g)
+        except ValueError, KeyError:
+            print('No such layer: ' + parse[1])
+    elif parse[0] in ('mnasort','ms'):
+        try:
+            g.set_vertex_filter(gfilts[int(parse[1])])
+        except IndexError:
+            pass
+        except ValueError, KeyError:
+            print('No such layer: ' + parse[1])
+        ressort = getVertexResistances(g)
+        posres = g.new_vertex_property('vector<float>')
+        x = 0
+        for v in g.vertices():
+            posres[v] = (x,1000*round(ressort[v],3))
+            x += 1
+        graph_draw(g, posres)
+        g.clear_filters()
+    elif parse[0] in ('voltagesort','vs'):
+        try:
+            g.set_vertex_filter(gfilts[int(parse[1])])
+        except IndexError:
+            pass
+        except ValueError, KeyError:
+            print('No such layer: ' + parse[1])
+        voltsort = nodeVoltages(g)
+        posres = g.new_vertex_property('vector<float>')
+        x = 0
+        for v in g.vertices():
+            posres[v] = (x,100*voltsort[v])
+            x += 1
+        graph_draw(g, posres)

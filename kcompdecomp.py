@@ -228,7 +228,7 @@ def kcompdecomp(graph,node=None):
     for child in node.children:
         kcompdecomp(graph,child)
 
-def middleout(graph):
+def middleout(graph, resistances=None):
     if graph.num_edges() < 1:
         return []
 
@@ -284,13 +284,13 @@ def middleout(graph):
     # debug
     #print(vmid)
     #print(nvmid)
-    md = min(set(degree)-set([0]))
+    md = max(set(degree)-set([0]))
     for v in graph.vertices():
-        if degree[v] > md:
+        if degree[v] < md:
             degree[v] = -1
         else:
             degree[v] = 1
-    graph_draw(graph, radial_tree_layout(graph, root), vertex_fill_color=degree, edge_pen_width=treemap)
+    graph_draw(graph, radial_tree_layout(graph, root), vertex_fill_color=degree, edge_pen_width=treemap, edge_color=resistances)
     #graph_draw(graph, radial_tree_layout(graph, newroot), vertex_fill_color=ndegree, edge_pen_width=ntreemap)
 
     return cores

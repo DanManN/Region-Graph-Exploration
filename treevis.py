@@ -8,7 +8,7 @@ win = None
 win2 = None
 dtree = {}
 
-def watchTree(ktree,resistances=None):
+def watchTree(ktree,resistances=None,vresistances=None,posres=None):
     try:
         global old_src, g, win, dtree
 
@@ -55,11 +55,11 @@ def watchTree(ktree,resistances=None):
             widget.queue_draw()
 
             ktree.graph.set_vertex_filter(dtree[src])
-            pos2 = arf_layout(ktree.graph)
-            if resistances:
-                win2 = GraphWindow(ktree.graph, pos2, geometry=(500, 400), edge_color=resistances)
+            if posres:
+                pos2 = posres
             else:
-                win2 = GraphWindow(ktree.graph, pos2, geometry=(500, 400))
+                pos2 = arf_layout(ktree.graph)
+            win2 = GraphWindow(ktree.graph, pos2, geometry=(500, 400), edge_color=resistances, vertex_fill_color=vresistances)
             win2.show_all()
 
         # Bind the function above as a montion notify handler
