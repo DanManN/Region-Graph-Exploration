@@ -1,6 +1,6 @@
 from graph_tool.all import *
-from scipy.sparse import csr_matrix
-from scipy.sparse.linalg import spsolve
+from scipy.sparse import *
+from scipy.sparse.linalg import lsqr
 from itertools import izip
 from kcompdecomp import LayeredBFS
 import numpy as np
@@ -22,15 +22,22 @@ def equivalent_resistances(g,node_pairs):
         s = r.shape[1]
         diff = csr_matrix((np.append([-1],r.data),np.append([n1],r.indices), np.append(np.full(n2+1,r.indptr[0]),np.full(s-n2,r.indptr[1]+1))),shape=G.shape)
         diff += diff.transpose()
-        diff[n2,n2] = G[n2,n2]
+        diff -= csr_matrix(([G[n2,n2]],([n2],[n2])),shape=G.shape)
         Gnn = G - diff
-        I = csr_matrix(([1],([n2],[0])),shape=(s,1))
-        ans = spsolve(Gnn,I)
-        Rmap[(v1,v2)] = -ans[n1]/ans[n2]
+        I = np.zeros(s)
+        I[n2] = 1
+        ans = lsqr(Gnn,I)[0]
+        res = -ans[n1]/ans[n2]
+        if res < 0:
+            Rmap[(v1,v2)] = np.inf
+        else:
+            Rmap[(v1,v2)] = res
     return Rmap
 
 
 def equivalent_resistance(g,v1,v2):
+    if v1 == v2:
+        return 0
     vind = g.new_vertex_property('long')
     c = 0
     for v in g.vertices():
@@ -39,18 +46,20 @@ def equivalent_resistance(g,v1,v2):
     G = laplacian(g, index=vind)
     n1 = vind[v1]
     n2 = vind[v2]
-    if n1 == n2:
-        return None
     r = G[n2]
     s = r.shape[1]
     diff = csr_matrix((np.append([-1],r.data),np.append([n1],r.indices), np.append(np.full(n2+1,r.indptr[0]),np.full(s-n2,r.indptr[1]+1))),shape=G.shape)
     diff += diff.transpose()
-    diff[n2,n2] = G[n2,n2]
+    diff -= csr_matrix(([G[n2,n2]],([n2],[n2])),shape=G.shape)
     Gnn = G - diff
-    I = csr_matrix(([1],([n2],[0])),shape=(s,1))
-    ans = spsolve(Gnn,I)
-    return -ans[n1]/ans[n2]
-
+    I = np.zeros(s)
+    I[n2] = 1
+    ans = lsqr(Gnn,I)[0]
+    res = -ans[n1]/ans[n2]
+    if res < 0:
+        return np.inf
+    else:
+        return res
 
 def getEdgeResistances(graph):
     resistances = graph.new_edge_property('float')
@@ -108,10 +117,11 @@ def nodeVoltages(g):
     s = r.shape[1]
     diff = csr_matrix((np.append([-1],r.data),np.append([n1],r.indices), np.append(np.full(n2+1,r.indptr[0]),np.full(s-n2,r.indptr[1]+1))),shape=G.shape)
     diff += diff.transpose()
-    diff[n2,n2] = G[n2,n2]
+    diff -= csr_matrix(([G[n2,n2]],([n2],[n2])),shape=G.shape)
     Gnn = G - diff
-    I = csr_matrix(([1],([n2],[0])),shape=(s,1))
-    ans = spsolve(Gnn,I)
+    I = np.zeros(s)
+    I[n2] = 1
+    ans = lsqr(Gnn,I)[0]
     voltages = g.new_vertex_property('float')
     for v in g.vertices():
         voltages[v] = ans[vind[v]]

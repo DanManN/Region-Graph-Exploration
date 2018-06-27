@@ -16,20 +16,6 @@ def randgraph(N,mindeg,maxdeg):
 args = sys.argv
 g = None
 
-def loadFile(a):
-    global g
-    try:
-        gm = GraphManager(None)
-        g = gm.create_graph(a[1])
-    except IndexError:
-        print('No file specified. Using random graph instead.')
-        g = randgraph(100,1,10)
-    except Exception:
-        print('Could not load file! Using random graph instead.')
-        g = randgraph(100,1,10)
-
-loadFile(args)
-
 def peel(graph):
     kd = peeldecomp(graph)
     layers = {}
@@ -41,6 +27,28 @@ def peel(graph):
         layers[layer] = GraphView(g, vfilt)
         filts[layer] = vfilt
     return layers,filts
+
+def loadFile(a):
+    global g,glayers,gfilts,ktree,cores,resistances,vresistances,posres,volts
+    try:
+        gm = GraphManager(None)
+        g = gm.create_graph(a[1])
+    except IndexError:
+        print('No file specified. Using random graph instead.')
+        g = randgraph(100,1,10)
+    except Exception:
+        print('Could not load file! Using random graph instead.')
+        g = randgraph(100,1,10)
+
+    glayers,gfilts = peel(g)
+    ktree = None
+    cores = []
+    resistances = None
+    vresistances = None
+    posres = None
+    volts = None
+
+loadFile(args)
 
 def walk(tree,info):
     if tree is None:
@@ -55,6 +63,13 @@ def walk(tree,info):
                 print(g.num_vertices())
             elif info == 'size':
                 print(g.num_edges())
+            elif info == 'volts':
+                maxv = 0
+                minv = 1
+                for v in g.vertices():
+                    if maxv < volts[v]: maxv = volts[v]
+                    if minv > volts[v]: minv = volts[v]
+                print('max: {}\nmin: {}\nrange:{}'.format(maxv,minv,maxv-minv))
         else:
             if info == 'stats':
                 g.set_vertex_filter(tree.component)
@@ -68,16 +83,9 @@ def walk(tree,info):
             walk(child,info)
     g.clear_filters()
 
-glayers,gfilts = peel(g)
-ktree = None
-cores = []
-resistances = None
-vresistances = None
-posres = None
-
 while True:
     cmd = raw_input("(k) $ ")
-    if cmd in ('quit','q'):
+    if cmd in ('quit','q','exit'):
         break
 
     parse = cmd.split()
@@ -94,13 +102,13 @@ while True:
     elif parse[0] in ('sessionsave', 'ss'):
         try:
             save_file = open(parse[1],'wb')
-            pickle.dump((g,glayers,gfilts,ktree,cores,resistances,vresistances,posres),save_file)
+            pickle.dump((g,glayers,gfilts,ktree,cores,resistances,vresistances,posres,volts),save_file)
         except IndexError:
             print('Specifiy save file!')
     elif parse[0] in ('sessionload', 'sl'):
         try:
             load_file = open(parse[1],'rb')
-            g,glayers,gfilts,ktree,cores,resistances,vresistances,posres = pickle.load(load_file)
+            g,glayers,gfilts,ktree,cores,resistances,vresistances,posres,volts = pickle.load(load_file)
         except IndexError:
             print('Specifiy save file!')
     elif parse[0] in ('load', 'ld'):
@@ -218,10 +226,10 @@ while True:
             pass
         except ValueError, KeyError:
             print('No such layer: ' + parse[1])
-        voltsort = nodeVoltages(g)
+        volts = nodeVoltages(g)
         posres = g.new_vertex_property('vector<float>')
         x = 0
         for v in g.vertices():
-            posres[v] = (x,100*voltsort[v])
+            posres[v] = (x,100*volts[v])
             x += 1
         graph_draw(g, posres)
