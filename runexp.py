@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 from kcompdecomp import *
+from flow import *
 from mna import *
 from treevis import watchTree
 from app.GraphManager import GraphManager
@@ -233,3 +234,11 @@ while True:
             posres[v] = (x,100*volts[v])
             x += 1
         graph_draw(g, posres)
+    elif parse[0] in ('flow','f'):
+        try:
+            g.set_vertex_filter(gfilts[int(parse[1])])
+        except IndexError:
+            pass
+        except ValueError, KeyError:
+            print('No such layer: ' + parse[1])
+        ktree = flowdecomp(g)

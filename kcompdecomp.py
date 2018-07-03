@@ -17,7 +17,7 @@ def peeldecomp(graph):
     graph.set_vertex_filter(vfilt,inv)
     return kcores
 
-class LayeredBFS(graph_tool.search.BFSVisitor):
+class LayeredBFS(BFSVisitor):
 
     def __init__(self, name, layers, treemap, pred, deg):
         self.name = name
@@ -53,7 +53,7 @@ def split(graph, seperating_set):
     for v in seperating_set:
         ss[v] = inv
     graph.set_vertex_filter(ss,inv)
-    comps, hist = graph_tool.topology.label_components(graph)
+    comps, hist = label_components(graph)
     graph.set_vertex_filter(vfilt,inv)
     #print(comps.a)
     for v in seperating_set:
@@ -63,17 +63,17 @@ def split(graph, seperating_set):
 def pseudo_min_seperating_set(graph):
     if graph.num_edges() < 1:
         return []
-    comps, hist = graph_tool.topology.label_components(graph)
+    comps, hist = label_components(graph)
     if len(hist) > 1:
         return []
 
     # top bfs
-    pseudo_d, end_pts = graph_tool.topology.pseudo_diameter(graph)
+    pseudo_d, end_pts = pseudo_diameter(graph)
     root = min(end_pts, key= lambda v : v.out_degree())
     layers = graph.new_vertex_property('int')
     treemap = graph.new_edge_property('float', val=0.3)
     #degree = graph.new_vertex_property('int')
-    graph_tool.search.bfs_search(graph, root, LayeredBFS(None, layers, treemap, None, None))#degree))
+    bfs_search(graph, root, LayeredBFS(None, layers, treemap, None, None))#degree))
 
     # stop if looks like a tree
     if min(treemap) > 1:
@@ -84,7 +84,7 @@ def pseudo_min_seperating_set(graph):
     middle = [max_layer/2,max_layer/2]
     if max_layer % 2 != 0:
         middle[1] += 1
-    vmid = graph_tool.util.find_vertex_range(graph,layers,middle)
+    vmid = find_vertex_range(graph,layers,middle)
 
     # smallest bfs layer vertices
     temp = {}
@@ -104,24 +104,24 @@ def pseudo_min_seperating_set(graph):
                 minlayer = middle[0]-n
                 mval = temp[minlayer]
         #minlayer = min(temp, key=temp.get)
-        vmin = graph_tool.util.find_vertex(graph,layers,minlayer)
+        vmin = find_vertex(graph,layers,minlayer)
     else:
         vmin = []
 
     # bottom bfs
-    vbottom = graph_tool.util.find_vertex(graph,layers,max_layer)
+    vbottom = find_vertex(graph,layers,max_layer)
     newroot = min(vbottom, key= lambda v : v.out_degree())
     nlayers = graph.new_vertex_property('int')
     ntreemap = graph.new_edge_property('float', val=0.3)
     #ndegree = graph.new_vertex_property('int')
-    graph_tool.search.bfs_search(graph, newroot, LayeredBFS(None, nlayers, ntreemap, None, None))# ndegree))
+    bfs_search(graph, newroot, LayeredBFS(None, nlayers, ntreemap, None, None))# ndegree))
 
     # second middle bfs layer vertices
     nmax_layer = max(nlayers)
     nmiddle = [nmax_layer/2,nmax_layer/2]
     if nmax_layer % 2 != 0:
         nmiddle[1] += 1
-    nvmid = graph_tool.util.find_vertex_range(graph,nlayers,nmiddle)
+    nvmid = find_vertex_range(graph,nlayers,nmiddle)
 
     # smallest bfs2 layer vertices
     ntemp = {}
@@ -141,7 +141,7 @@ def pseudo_min_seperating_set(graph):
                 nminlayer = nmiddle[0]-n
                 nmval = ntemp[nminlayer]
         #nminlayer = min(temp, key=temp.get)
-        nvmin = graph_tool.util.find_vertex(graph,nlayers,nminlayer)
+        nvmin = find_vertex(graph,nlayers,nminlayer)
     else:
         nvmin = []
 
@@ -154,7 +154,7 @@ def pseudo_min_seperating_set(graph):
     vfilt, inv = graph.get_vertex_filter()
     graph.set_vertex_filter(test)
     if graph.num_vertices > 0:
-        comps, hist = graph_tool.topology.label_components(graph)
+        comps, hist = label_components(graph)
     else:
         hist = 0;
     #print('len(hist): '+str(len(hist)))
@@ -221,7 +221,7 @@ def kcompdecomp(graph,node=None):
 
     for c in set(comps)-set([-1]):
         comp = graph.new_vertex_property('bool')
-        for v in graph_tool.util.find_vertex(graph,comps,c)+ss:
+        for v in find_vertex(graph,comps,c)+ss:
             comp[v] = True
         node.add_child(kTree(graph,comp))
 
@@ -233,12 +233,12 @@ def middleout(graph, resistances=None):
         return []
 
     # top bfs
-    pseudo_d, end_pts = graph_tool.topology.pseudo_diameter(graph)
+    pseudo_d, end_pts = pseudo_diameter(graph)
     root = min(end_pts, key= lambda v : v.out_degree())
     layers = graph.new_vertex_property('int')
     treemap = graph.new_edge_property('float', val=0.3)
     degree = graph.new_vertex_property('int')
-    graph_tool.search.bfs_search(graph, root, LayeredBFS(None, layers, treemap, None, degree))
+    bfs_search(graph, root, LayeredBFS(None, layers, treemap, None, degree))
 
     # stop if looks like a tree
     # if min(treemap) > 1:
@@ -253,7 +253,7 @@ def middleout(graph, resistances=None):
     #print('Middle: '+str(middle))
     #print(layers.a)
     for l in range(middle+odd):
-        verts = graph_tool.util.find_vertex_range(graph,layers,[middle-l-1+odd,middle+l])
+        verts = find_vertex_range(graph,layers,[middle-l-1+odd,middle+l])
         #print([middle-l-1+odd,middle+l])
         #print(verts)
         filt = graph.new_vertex_property('bool')
@@ -262,18 +262,18 @@ def middleout(graph, resistances=None):
         cores.append(filt)
 
     # bottom bfs
-    # vbottom = graph_tool.util.find_vertex(graph,layers,max_layer)
+    # vbottom = find_vertex(graph,layers,max_layer)
     # newroot = min(vbottom, key= lambda v : v.out_degree())
     # nlayers = graph.new_vertex_property('int')
     # ntreemap = graph.new_edge_property('float', val=0.3)
-    # graph_tool.search.bfs_search(graph, newroot, LayeredBFS(None, nlayers, ntreemap, None, None))
+    # bfs_search(graph, newroot, LayeredBFS(None, nlayers, ntreemap, None, None))
 
     # second middle bfs layer vertices
     # nmax_layer = max(nlayers)
     # nmiddle = [nmax_layer/2,nmax_layer/2]
     # if nmax_layer % 2 != 0:
     #    nmiddle[1] += 1
-    # nvmid = graph_tool.util.find_vertex_range(graph,nlayers,nmiddle)
+    # nvmid = find_vertex_range(graph,nlayers,nmiddle)
 
     # middle overlap
     # overlap = list(set(vmid) & set(nvmid))
@@ -303,10 +303,10 @@ def stats(graph):
     else:
         peelvalue = 0
 
-    pseudo_d, end_pts = graph_tool.topology.pseudo_diameter(graph)
+    pseudo_d, end_pts = pseudo_diameter(graph)
     root = min(end_pts, key= lambda v : v.out_degree())
     pred = graph.new_vertex_property('int',-1)
     deg = graph.new_vertex_property('int')
-    graph_tool.search.bfs_search(graph, root, LayeredBFS(None, None, None, pred, deg))
+    bfs_search(graph, root, LayeredBFS(None, None, None, pred, deg))
 
     return {'peel_value': peelvalue, 'is_fixed_point': fixedpoint, 'diameter': {'value':pseudo_d, 'path': pred, 'degrees':deg}}
