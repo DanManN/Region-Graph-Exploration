@@ -284,9 +284,9 @@ def middleout(graph, resistances=None):
     # debug
     #print(vmid)
     #print(nvmid)
-    md = max(set(degree)-set([0]))
+    md = min(set(degree)-set([0]))
     for v in graph.vertices():
-        if degree[v] < md:
+        if degree[v] > md:
             degree[v] = -1
         else:
             degree[v] = 1
