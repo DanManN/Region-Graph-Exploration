@@ -1,4 +1,5 @@
 from graph_tool.all import *
+from itertools import combinations
 from app.Helpers import kcore_decomposition
 
 def peeldecomp(graph):
@@ -59,6 +60,17 @@ def split(graph, seperating_set):
     for v in seperating_set:
         comps[v] = -1
     return comps
+
+def graphComplement(g):
+    edges = {(edge.source(),edge.target()):None for edge in g.edges()}
+    for edge in g.edges():
+        edges[(edge.target(),edge.source())] = None
+    graph = Graph(directed=False)
+    for edge in combinations(g.vertices(),2):
+        if edge not in edges:
+            graph.add_edge(int(edge[0]),int(edge[1]))
+    return graph
+
 
 def pseudo_min_seperating_set(graph):
     if graph.num_edges() < 1:
