@@ -216,11 +216,11 @@ class kTree(object):
         assert isinstance(node, kTree)
         self.children.append(node)
 
-def kcompdecomp(graph,node=None):
+def kcompdecomp(graph,node=None,array=None):
     vfilt, inv = graph.get_vertex_filter()
     if node == None:
         node = kTree(graph,graph.get_vertex_filter()[0])
-        kcompdecomp(graph,node)
+        kcompdecomp(graph,node,array)
         graph.set_vertex_filter(vfilt,inv)
         return node
 
@@ -228,6 +228,7 @@ def kcompdecomp(graph,node=None):
     ss = pseudo_min_seperating_set(graph)
     comps = split(graph,ss)
     if max(comps) == 0:
+        if array is not None: array.append(node.component)
         return None
     #graph_draw(graph, vertex_fill_color=split(graph,ss))
 
@@ -238,7 +239,7 @@ def kcompdecomp(graph,node=None):
         node.add_child(kTree(graph,comp))
 
     for child in node.children:
-        kcompdecomp(graph,child)
+        kcompdecomp(graph,child,array)
 
 def middleout(graph, resistances=None):
     if graph.num_edges() < 1:

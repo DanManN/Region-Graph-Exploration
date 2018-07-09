@@ -1,4 +1,6 @@
 from kcompdecomp import *
+import numpy as np
+from itertools import combinations
 from gi.repository import Gtk, Gdk
 import sys
 
@@ -8,24 +10,40 @@ win = None
 win2 = None
 dtree = {}
 
-def watchTree(ktree,resistances=None,vresistances=None,posres=None):
+def watchTree(ktree,graph,resistances=None,vresistances=None,posres=None):
     try:
         global old_src, g, win, dtree
 
         g = Graph(directed=True)
+        edges = None
 
-        def populateG(node,pvertex=None):
-            global dtree
-            v = g.add_vertex()
-            if pvertex:
-                g.add_edge(pvertex,v)
-            dtree[v] = node.component
-            for child in node.children:
-                populateG(child,v)
+        if type(ktree) == list:
+            g.set_directed(False)
+            edges = g.new_edge_property('bool')
+            for c1,c2 in combinations(range(len(ktree)),2):
+                edge = g.add_edge(c1,c2)
+                # print(ktree[c1].a)
+                # print(ktree[c2].a)
+                edges[edge] = np.any(np.logical_and(ktree[c1].a,ktree[c2].a))
+                # print(edges[edge])
+                dtree[c1] = ktree[c1]
+                dtree[c2] = ktree[c2]
 
-        populateG(ktree)
+            g.set_edge_filter(edges)
+            pos = arf_layout(g)  # layout positions
+        else:
+            def populateG(node,pvertex=None):
+                global dtree
+                v = g.add_vertex()
+                if pvertex:
+                    g.add_edge(pvertex,v)
+                dtree[v] = node.component
+                for child in node.children:
+                    populateG(child,v)
 
-        pos = radial_tree_layout(g,g.vertex(0))  # layout positions
+            populateG(ktree)
+
+            pos = radial_tree_layout(g,g.vertex(0))  # layout positions
 
         vcolor = g.new_vertex_property("vector<double>")
         for v in g.vertices():
@@ -54,12 +72,13 @@ def watchTree(ktree,resistances=None,vresistances=None,posres=None):
             widget.regenerate_surface()
             widget.queue_draw()
 
-            ktree.graph.set_vertex_filter(dtree[src])
+            graph.set_vertex_filter(dtree[src])
+            print(dtree[src].a)
             if posres:
                 pos2 = posres
             else:
-                pos2 = arf_layout(ktree.graph)
-            win2 = GraphWindow(ktree.graph, pos2, geometry=(500, 400), edge_color=resistances, vertex_fill_color=vresistances)
+                pos2 = arf_layout(graph)
+            win2 = GraphWindow(graph, pos2, geometry=(500, 400), edge_color=resistances, vertex_fill_color=vresistances)
             win2.show_all()
 
         # Bind the function above as a montion notify handler

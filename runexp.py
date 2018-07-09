@@ -30,7 +30,7 @@ def peel(graph):
     return layers,filts
 
 def loadFile(a):
-    global g,glayers,gfilts,ktree,cores,resistances,vresistances,posres,volts
+    global g,glayers,gfilts,ktree,comps,cores,resistances,vresistances,posres,volts
     try:
         gm = GraphManager(None)
         g = gm.create_graph(a[1])
@@ -43,6 +43,7 @@ def loadFile(a):
 
     glayers,gfilts = peel(g)
     ktree = None
+    comps = None
     cores = []
     resistances = None
     vresistances = None
@@ -103,13 +104,13 @@ while True:
     elif parse[0] in ('sessionsave', 'ss'):
         try:
             save_file = open(parse[1],'wb')
-            pickle.dump((g,glayers,gfilts,ktree,cores,resistances,vresistances,posres,volts),save_file)
+            pickle.dump((g,glayers,gfilts,ktree,comps,cores,resistances,vresistances,posres,volts),save_file)
         except IndexError:
             print('Specifiy save file!')
     elif parse[0] in ('sessionload', 'sl'):
         try:
             load_file = open(parse[1],'rb')
-            g,glayers,gfilts,ktree,cores,resistances,vresistances,posres,volts = pickle.load(load_file)
+            g,glayers,gfilts,ktree,comps,cores,resistances,vresistances,posres,volts = pickle.load(load_file)
         except IndexError:
             print('Specifiy save file!')
     elif parse[0] in ('load', 'ld'):
@@ -144,7 +145,8 @@ while True:
             pass
         except ValueError, KeyError:
             print('No such layer: ' + parse[1])
-        ktree = kcompdecomp(g)
+        comps = []
+        ktree = kcompdecomp(g,array=comps)
     elif parse[0] in ('leaves','lv'):
         try:
             info = parse[1]
@@ -154,7 +156,11 @@ while True:
         g.clear_filters()
     elif parse[0] in ('treeview','t'):
         if ktree:
-            watchTree(ktree,resistances,vresistances,posres)
+            watchTree(ktree,ktree.graph,resistances,vresistances,posres)
+        g.clear_filters()
+    elif parse[0] in ('kview','kv'):
+        if ktree:
+            watchTree(comps,ktree.graph,resistances,vresistances,posres)
         g.clear_filters()
     elif parse[0] in ('cores','c'):
         try:
