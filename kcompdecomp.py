@@ -205,9 +205,11 @@ def pseudo_min_seperating_set(graph):
     return ss
 
 class kTree(object):
-    def __init__(self, graph, component=None, children=None):
+    def __init__(self, graph, component=None, parent=None, seperating_set=None, children=None):
         self.graph = graph
         self.component = component
+        self.parent = parent
+        self.seperating_set = seperating_set
         self.children = []
         if children is not None:
             for child in children:
@@ -216,19 +218,27 @@ class kTree(object):
         assert isinstance(node, kTree)
         self.children.append(node)
 
-def kcompdecomp(graph,node=None,array=None):
+def kcompdecomp(graph,node=None,array=None,edge_prop=None,sep_sets=None):
     vfilt, inv = graph.get_vertex_filter()
     if node == None:
         node = kTree(graph,graph.get_vertex_filter()[0])
-        kcompdecomp(graph,node,array)
+        kcompdecomp(graph,node,array,edge_prop,sep_sets)
         graph.set_vertex_filter(vfilt,inv)
         return node
 
     graph.set_vertex_filter(node.component)
     ss = pseudo_min_seperating_set(graph)
+    node.seperating_set = ss
     comps = split(graph,ss)
+    if sep_sets:
+        for s in ss:
+            sep_sets[s] = True
     if max(comps) == 0:
         if array is not None: array.append(node.component)
+        if edge_prop is not None:
+            knum = max(edge_prop.a)+1
+            for edge in graph.edges():
+                edge_prop[edge] = knum
         return None
     #graph_draw(graph, vertex_fill_color=split(graph,ss))
 
@@ -236,10 +246,10 @@ def kcompdecomp(graph,node=None,array=None):
         comp = graph.new_vertex_property('bool')
         for v in find_vertex(graph,comps,c)+ss:
             comp[v] = True
-        node.add_child(kTree(graph,comp))
+        node.add_child(kTree(graph,comp,node))
 
     for child in node.children:
-        kcompdecomp(graph,child,array)
+        kcompdecomp(graph,child,array,edge_prop,sep_sets)
 
 def middleout(graph, resistances=None):
     if graph.num_edges() < 1:

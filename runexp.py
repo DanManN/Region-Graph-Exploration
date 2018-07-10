@@ -3,6 +3,7 @@ from kcompdecomp import *
 from flow import *
 from mna import *
 from treevis import watchTree
+from decompvis import watchdecomp
 from app.GraphManager import GraphManager
 from random import randint
 from math import log10
@@ -12,7 +13,7 @@ import pickle
 sys.settrace
 
 def randgraph(N,mindeg,maxdeg):
-    return graph_tool.generation.random_graph(N,lambda x:randint(mindeg,maxdeg),directed=False)
+    return random_graph(N,lambda x:randint(mindeg,maxdeg),directed=False)
 
 args = sys.argv
 g = None
@@ -30,7 +31,7 @@ def peel(graph):
     return layers,filts
 
 def loadFile(a):
-    global g,glayers,gfilts,ktree,comps,cores,resistances,vresistances,posres,volts
+    global g,glayers,gfilts,ktree,comps,kcomps,ss,cores,resistances,vresistances,posres,volts
     try:
         gm = GraphManager(None)
         g = gm.create_graph(a[1])
@@ -44,6 +45,8 @@ def loadFile(a):
     glayers,gfilts = peel(g)
     ktree = None
     comps = None
+    kcomps = None
+    ss = None
     cores = []
     resistances = None
     vresistances = None
@@ -59,8 +62,7 @@ def walk(tree,info):
         if child.children == []:
             g.set_vertex_filter(child.component)
             if info == 'draw':
-                pos = graph_tool.draw.arf_layout(g)
-                graph_draw(g, pos)
+                graph_draw(g, arf_layout(g))
             elif info == 'order':
                 print(g.num_vertices())
             elif info == 'size':
@@ -94,23 +96,21 @@ while True:
     if parse[0] in ('draw','d'):
         try:
             subg = glayers[int(parse[1])]
-            pos = graph_tool.draw.arf_layout(subg)
-            graph_draw(subg, pos)
+            graph_draw(subg, arf_layout(subg))
         except IndexError:
-            pos = graph_tool.draw.arf_layout(g)
-            graph_draw(g, pos)
-        except ValueError, KeyError:
+            graph_draw(g, arf_layout(g))
+        except (ValueError, KeyError) as err:
             print('No such layer: ' + parse[1])
     elif parse[0] in ('sessionsave', 'ss'):
         try:
             save_file = open(parse[1],'wb')
-            pickle.dump((g,glayers,gfilts,ktree,comps,cores,resistances,vresistances,posres,volts),save_file)
+            pickle.dump((g,glayers,gfilts,ktree,comps,kcomps,ss,cores,resistances,vresistances,posres,volts),save_file)
         except IndexError:
             print('Specifiy save file!')
     elif parse[0] in ('sessionload', 'sl'):
         try:
             load_file = open(parse[1],'rb')
-            g,glayers,gfilts,ktree,comps,cores,resistances,vresistances,posres,volts = pickle.load(load_file)
+            g,glayers,gfilts,ktree,comps,kcomps,ss,cores,resistances,vresistances,posres,volts = pickle.load(load_file)
         except IndexError:
             print('Specifiy save file!')
     elif parse[0] in ('load', 'ld'):
@@ -123,30 +123,32 @@ while True:
             print(glayers[int(parse[1])].num_vertices())
         except IndexError:
             print(g.num_vertices())
-        except ValueError, KeyError:
+        except (ValueError, KeyError) as err:
             print('No such layer: ' + parse[1])
     elif parse[0] in ('size','s'):
         try:
             print(glayers[int(parse[1])].num_edges())
         except IndexError:
             print(g.num_edges())
-        except ValueError, KeyError:
+        except (ValueError, KeyError) as err:
             print('No such layer: ' + parse[1])
     elif parse[0] in ('random','r'):
         try:
             g = randgraph(int(parse[1]),int(parse[2]),int(parse[3]))
             glayers,gfilts = peel(g)
-        except IndexError, ValueError:
+        except (IndexError, ValueError) as err:
             print('Specifiy random graph parameters: order, min degree, max degree')
     elif parse[0] in ('kcompdecomp','k'):
         try:
             g.set_vertex_filter(gfilts[int(parse[1])])
+        except (ValueError, KeyError) as err:
+            print('No such layer: ' + parse[1])
         except IndexError:
             pass
-        except ValueError, KeyError:
-            print('No such layer: ' + parse[1])
         comps = []
-        ktree = kcompdecomp(g,array=comps)
+        kcomps = g.new_edge_property('int')
+        ss = g.new_vertex_property('bool')
+        ktree = kcompdecomp(g,array=comps,edge_prop=kcomps,sep_sets=ss)
     elif parse[0] in ('leaves','lv'):
         try:
             info = parse[1]
@@ -156,18 +158,29 @@ while True:
         g.clear_filters()
     elif parse[0] in ('treeview','t'):
         if ktree:
-            watchTree(ktree,ktree.graph,resistances,vresistances,posres)
+            watchTree(ktree,ktree.graph,edge_prop=kcomps,posres=posres)
+            # watchTree(ktree,ktree.graph,resistances,vresistances,posres)
         g.clear_filters()
     elif parse[0] in ('kview','kv'):
+        if comps:
+            watchTree(comps,ktree.graph,edge_prop=kcomps,vert_prop=ss,posres=posres)
+            # watchTree(comps,ktree.graph,resistances,vresistances,posres)
+        g.clear_filters()
+    elif parse[0] in ('decompanimation','da'):
         if ktree:
-            watchTree(comps,ktree.graph,resistances,vresistances,posres)
+           watchdecomp(ktree)
+        g.clear_filters()
+    elif parse[0] in ('kcomponentview','kcv'):
+        if kcomps:
+            g.set_vertex_filter(ktree.component)
+            graph_draw(g, arf_layout(g), edge_color=kcomps, vertex_fill_color=ss)
         g.clear_filters()
     elif parse[0] in ('cores','c'):
         try:
             g.set_vertex_filter(gfilts[int(parse[1])])
         except IndexError:
             pass
-        except ValueError, KeyError:
+        except (ValueError, KeyError) as err:
             print('No such layer: ' + parse[1])
         cores = middleout(g, resistances)
     elif parse[0] in ('coreview','cv'):
@@ -177,9 +190,8 @@ while True:
             info = 'draw'
         for c in cores:
             g.set_vertex_filter(c)
-            pos = graph_tool.draw.arf_layout(g)
             if info == 'draw':
-                graph_draw(g, pos)
+                graph_draw(g, arf_layout(g))
             elif info == 'stats':
                 stat = stats(g)
                 print('peel_value: ' + str(stat['peel_value']))
@@ -190,7 +202,7 @@ while True:
             g.set_vertex_filter(gfilts[int(parse[1])])
         except IndexError:
             pass
-        except ValueError, KeyError:
+        except (ValueError, KeyError) as err:
             print('No such layer: ' + parse[1])
         resistances = getEdgeResistances(g)
         g.clear_filters()
@@ -201,7 +213,7 @@ while True:
                 graph_draw(subg, arf_layout(subg), edge_color=resistances)
             except IndexError:
                 graph_draw(g, arf_layout(g), edge_color=resistances)
-            except ValueError, KeyError:
+            except (ValueError, KeyError) as err:
                 print('No such layer: ' + parse[1])
     elif parse[0] in ('mnadecomp','md'):
         try:
@@ -209,14 +221,14 @@ while True:
             vresistances = mnadecomp(subg)
         except IndexError:
             vresistances = mnadecomp(g)
-        except ValueError, KeyError:
+        except (ValueError, KeyError) as err:
             print('No such layer: ' + parse[1])
     elif parse[0] in ('mnasort','ms'):
         try:
             g.set_vertex_filter(gfilts[int(parse[1])])
         except IndexError:
             pass
-        except ValueError, KeyError:
+        except (ValueError, KeyError) as err:
             print('No such layer: ' + parse[1])
         ressort = getVertexResistances(g)
         posres = g.new_vertex_property('vector<float>')
@@ -231,7 +243,7 @@ while True:
             g.set_vertex_filter(gfilts[int(parse[1])])
         except IndexError:
             pass
-        except ValueError, KeyError:
+        except (ValueError, KeyError) as err:
             print('No such layer: ' + parse[1])
         volts = nodeVoltages(g)
         posres = g.new_vertex_property('vector<float>')
@@ -245,6 +257,6 @@ while True:
             g.set_vertex_filter(gfilts[int(parse[1])])
         except IndexError:
             pass
-        except ValueError, KeyError:
+        except (ValueError, KeyError) as err:
             print('No such layer: ' + parse[1])
         ktree = flowdecomp(g)
