@@ -149,6 +149,7 @@ while True:
         kcomps = g.new_edge_property('int')
         ss = g.new_vertex_property('bool')
         ktree = kcompdecomp(g,array=comps,edge_prop=kcomps,sep_sets=ss)
+        g.clear_filters()
     elif parse[0] in ('leaves','lv'):
         try:
             info = parse[1]
@@ -158,7 +159,12 @@ while True:
         g.clear_filters()
     elif parse[0] in ('treeview','t'):
         if ktree:
-            watchTree(ktree,ktree.graph,edge_prop=kcomps,posres=posres)
+            dynamic = False
+            if len(parse) > 1:
+                if parse[1] in ('dynamic','d'):
+                    dynamic = True
+            watchTree(ktree,ktree.graph,dynamic)
+            # watchTree(ktree,ktree.graph,edge_prop=kcomps,posres=posres)
             # watchTree(ktree,ktree.graph,resistances,vresistances,posres)
         g.clear_filters()
     elif parse[0] in ('kview','kv'):

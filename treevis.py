@@ -10,7 +10,7 @@ win = None
 win2 = None
 dtktree = {}
 
-def watchTree(ktree,graph,edge_prop=None,vert_prop=None,posres=None):
+def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=None):
     try:
         global old_src, g, win, win2, dtktree
 
@@ -31,6 +31,7 @@ def watchTree(ktree,graph,edge_prop=None,vert_prop=None,posres=None):
 
             g.set_edge_filter(edges)
             pos = arf_layout(g)  # layout positions
+            graph.set_vertex_filter(dtktree[0])
         else:
             def populateG(node,pvertex=None):
                 global dtktree
@@ -42,16 +43,20 @@ def watchTree(ktree,graph,edge_prop=None,vert_prop=None,posres=None):
                     populateG(child,v)
 
             populateG(ktree)
+            pos = radial_tree_layout(g,g.vertex(0),r=4)  # layout positions
+            graph.set_vertex_filter(dtktree[0].component)
 
-            pos = radial_tree_layout(g,g.vertex(0))  # layout positions
+        purple = [0.8, 0, 0.4, 1]
+        grey = [0.5, 0.5, 0.5, 1]
+        blue = [0.0, 0.2, 0.8, 1]
+        green = [0.4, 0.9, 0.0, 1]
+        yellow = [1.0, 1.0, 0.0, 1]
 
         vcolor = g.new_vertex_property("vector<double>")
         for v in g.vertices():
-            vcolor[v] = [0.6, 0.6, 0.6, 1]
+            vcolor[v] = grey
 
         win = GraphWindow(g, pos, geometry=(1000, 800), vertex_fill_color=vcolor)
-
-        orange = [0.807843137254902, 0.3607843137254902, 0.0, 1.0]
 
         if posres:
             pos2 = posres
@@ -63,13 +68,20 @@ def watchTree(ktree,graph,edge_prop=None,vert_prop=None,posres=None):
         else:
             vcolor2 = graph.new_vertex_property("vector<double>")
 
-        win2 = GraphWindow(graph, pos2, geometry=(500, 400), edge_color=edge_prop, vertex_fill_color=vcolor2)
-        arf_layout(graph, pos=pos2, d=3)
+        if edge_prop:
+            ecolor = edge_prop
+        else:
+            ecolor = graph.new_edge_property("vector<double>")
+
+        vcolor3 = graph.new_vertex_property("vector<double>")
+        win2 = GraphWindow(graph, pos2, geometry=(500, 400), edge_color=ecolor, vertex_fill_color=vcolor2, vertex_color=vcolor3)
+        if not dynamic and not posres:
+            arf_layout(graph, pos=pos2, d=4)
 
         def update_comp(widget, event):
             global old_src, g, win, win2
             src = widget.picked
-            if src is None:
+            if src is None or type(src) == bool:
                 return True
             if isinstance(src, PropertyMap):
                 src = [v for v in g.vertices() if src[v]]
@@ -79,30 +91,68 @@ def watchTree(ktree,graph,edge_prop=None,vert_prop=None,posres=None):
             if src == old_src:
                 return True
             old_src = src
-            # for v in g.vertices():
-            #     vcolor[v] = [0.6, 0.6, 0.6, 1]
-            vcolor[src] = orange
+            for v in g.vertices():
+                vcolor[v] = grey
+            #vcolor[src] = blue
+            if src > 0:
+                vcolor[list(src.out_edges())[0].target()] = yellow
+            def colordown(v):
+                vcolor[v] = purple
+                for e in v.in_edges():
+                    colordown(e.source())
+            colordown(src)
+            vcolor[src] = blue
+                
             widget.regenerate_surface()
             widget.queue_draw()
 
             if type(ktree) == list:
                 graph.set_vertex_filter(dtktree[src])
             else:
-                graph.set_vertex_filter(dtktree[src].component)
-                if not vert_prop:
-                    for v in graph.vertices():
-                        vcolor2[v] = [0.0, 0.2, 0.6, 1]
-                    for v in dtktree[src].seperating_set:
-                        vcolor2[v] = [0.6, 0.8, 0.0, 1]
+                if src > 0:
+                    graph.set_vertex_filter(dtktree[src].parent.component)
+                    if not vert_prop:
+                        for v in graph.vertices():
+                            vcolor2[v] = grey
+                    if not edge_prop:
+                        for e in graph.edges():
+                            ecolor[e] = grey
+                    graph.set_vertex_filter(dtktree[src].component)
+                    if not edge_prop:
+                        for e in graph.edges():
+                            ecolor[e] = purple
+                    if not vert_prop:
+                        for v in graph.vertices():
+                            vcolor2[v] = purple
+                        for v in dtktree[src].parent.seperating_set:
+                            vcolor2[v] = yellow
+                        for v in dtktree[src].seperating_set:
+                            if vcolor2[v] == yellow:
+                                vcolor2[v] = green
+                            else:
+                                vcolor2[v] = blue
+                    graph.set_vertex_filter(dtktree[src].parent.component)
+                else:
+                    graph.set_vertex_filter(dtktree[src].component)
+                    if not edge_prop:
+                        for e in graph.edges():
+                            ecolor[e] = purple
+                    if not vert_prop:
+                        for v in graph.vertices():
+                            vcolor2[v] = purple
+                        for v in dtktree[src].seperating_set:
+                            vcolor2[v] = blue
 
-            #if not posres:
-            #    arf_layout(graph, pos=pos2, d=3)
-            #win2.graph.fit_to_window(ink=True)
+            if dynamic:
+                if not posres:
+                    arf_layout(graph, pos=pos2, d=2.1)
+                win2.graph.fit_to_window(ink=True)
             win2.graph.regenerate_surface()
             win2.graph.queue_draw()
 
         # Bind the function above as a montion notify handler
         win.graph.connect("button_press_event", update_comp)
+        #win.graph.connect("motion_notify_event", no_highlight)
 
         # We will give the user the ability to stop the program by closing the window.
         win.connect("delete_event", Gtk.main_quit)
