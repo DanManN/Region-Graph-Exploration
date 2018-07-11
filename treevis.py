@@ -10,7 +10,7 @@ win = None
 win2 = None
 dtktree = {}
 
-def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=None):
+def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=None,offscreen=False):
     try:
         global old_src, g, win, win2, dtktree
 
@@ -150,6 +150,17 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
                 win2.graph.fit_to_window(ink=True)
             win2.graph.regenerate_surface()
             win2.graph.queue_draw()
+
+            if offscreen:
+                window = widget.get_window()
+                pixbuf = Gdk.pixbuf_get_from_window(window, 0, 0, 500, 400)
+                pixbuf2 = Gdk.pixbuf_get_from_window(win2.graph.get_window(), 0, 0, 500, 400)
+                if dynamic:
+                    pixbuf2.savev(r'./screens/treeviewdyn/kcomp%06d.png' % src, 'png', [], [])
+                    pixbuf.savev(r'./screens/treeviewdyn/ktree%06d.png' % src, 'png', [], [])
+                else:
+                    pixbuf2.savev(r'./screens/treeview/kcomp%06d.png' % src, 'png', [], [])
+                    pixbuf.savev(r'./screens/treeview/ktree%06d.png' % src, 'png', [], [])
 
         # Bind the function above as a montion notify handler
         win.graph.connect("button_press_event", update_comp)

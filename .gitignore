@@ -12,6 +12,7 @@ graphs.txt
 *.pkl
 temp
 *.zip
+screens
 
 # Created by https://www.gitignore.io/api/python,vim
 

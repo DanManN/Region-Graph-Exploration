@@ -160,10 +160,15 @@ while True:
     elif parse[0] in ('treeview','t'):
         if ktree:
             dynamic = False
-            if len(parse) > 1:
-                if parse[1] in ('dynamic','d'):
+            savepng = False
+            try:
+                if 'd' in parse[1]:
                     dynamic = True
-            watchTree(ktree,ktree.graph,dynamic)
+                if 'o' in parse[1]:
+                    savepng = True
+            except IndexError:
+                pass
+            watchTree(ktree,ktree.graph,dynamic,offscreen=savepng)
             # watchTree(ktree,ktree.graph,edge_prop=kcomps,posres=posres)
             # watchTree(ktree,ktree.graph,resistances,vresistances,posres)
         g.clear_filters()
