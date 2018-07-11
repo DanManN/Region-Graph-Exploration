@@ -91,6 +91,8 @@ while True:
     cmd = raw_input("(k) $ ")
     if cmd in ('quit','q','exit'):
         break
+    if cmd == '':
+        continue
 
     parse = cmd.split()
     if parse[0] in ('draw','d'):
