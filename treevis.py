@@ -61,7 +61,10 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
         if posres:
             pos2 = posres
         else:
-            pos2 = arf_layout(graph)
+            if dynamic:
+                pos2 = arf_layout(graph)
+            else:
+                pos2 = arf_layout(graph, d=4)
 
         if vert_prop:
             vcolor2 = vert_prop
@@ -75,8 +78,6 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
 
         vcolor3 = graph.new_vertex_property("vector<double>")
         win2 = GraphWindow(graph, pos2, geometry=(500, 400), edge_color=ecolor, vertex_fill_color=vcolor2, vertex_color=vcolor3)
-        if not dynamic and not posres:
-            arf_layout(graph, pos=pos2, d=4)
 
         def update_comp(widget, event):
             global old_src, g, win, win2
@@ -145,7 +146,7 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
 
             if dynamic:
                 if not posres:
-                    arf_layout(graph, pos=pos2, d=2.1)
+                    arf_layout(graph, pos=pos2, d=2.2)
                 win2.graph.fit_to_window(ink=True)
             win2.graph.regenerate_surface()
             win2.graph.queue_draw()
