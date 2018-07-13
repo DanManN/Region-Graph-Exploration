@@ -13,6 +13,7 @@ graphs.txt
 temp
 *.zip
 screens
+proteindata
 
 # Created by https://www.gitignore.io/api/python,vim
 

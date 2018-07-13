@@ -9,10 +9,11 @@ g = None
 win = None
 win2 = None
 dtktree = {}
+count = 0
 
 def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=None,offscreen=False):
     try:
-        global old_src, g, win, win2, dtktree
+        global old_src, g, win, win2, dtktree, count
 
         g = Graph(directed=True)
         edges = None
@@ -51,8 +52,10 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
         blue = [0.0, 0.2, 0.8, 1]
         green = [0.4, 0.9, 0.0, 1]
         yellow = [1.0, 1.0, 0.0, 1]
+        white = [0, 0, 0, 0]
 
         vcolor = g.new_vertex_property("vector<double>")
+        vcoloro = g.new_vertex_property("vector<double>")
         for v in g.vertices():
             vcolor[v] = grey
 
@@ -80,7 +83,7 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
         win2 = GraphWindow(graph, pos2, geometry=(500, 400), edge_color=ecolor, vertex_fill_color=vcolor2, vertex_color=vcolor3)
 
         def update_comp(widget, event):
-            global old_src, g, win, win2
+            global old_src, g, win, win2, count
             src = widget.picked
             if src is None or type(src) == bool:
                 return True
@@ -96,32 +99,32 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
                     pixbuf2 = Gdk.pixbuf_get_from_window(win2.graph.get_window(), 0, 0, 1000, 1000)
                     print(src)
                     if dynamic:
-                        pixbuf2.savev(r'./screens/treeviewdyn/kcomp%06d.png' % src, 'png', [], [])
-                        pixbuf.savev(r'./screens/treeviewdyn/ktree%06d.png' % src, 'png', [], [])
+                        pixbuf2.savev(r'./screens/treeviewdyn/kcomp%06d.png' % count, 'png', [], [])
+                        pixbuf.savev(r'./screens/treeviewdyn/ktree%06d.png' % count, 'png', [], [])
                     else:
-                        pixbuf2.savev(r'./screens/treeview/kcomp%06d.png' % src, 'png', [], [])
-                        pixbuf.savev(r'./screens/treeview/ktree%06d.png' % src, 'png', [], [])
+                        pixbuf2.savev(r'./screens/treeview/kcomp%06d.png' % count, 'png', [], [])
+                        pixbuf.savev(r'./screens/treeview/ktree%06d.png' % count, 'png', [], [])
+                    count += 1
                 return True
             old_src = src
             for v in g.vertices():
                 vcolor[v] = grey
             #vcolor[src] = blue
-            if src > 0:
-                vcolor[list(src.out_edges())[0].target()] = yellow
+            #if src > 0:
+            #    vcolor[list(src.out_edges())[0].target()] = yellow
             def colordown(v):
                 vcolor[v] = purple
                 for e in v.in_edges():
                     colordown(e.source())
             colordown(src)
-            vcolor[src] = blue
-                
+
             widget.regenerate_surface()
             widget.queue_draw()
 
             if type(ktree) == list:
                 graph.set_vertex_filter(dtktree[src])
             else:
-                if src > 0:
+                if False: #src > 0:
                     graph.set_vertex_filter(dtktree[src].parent.component)
                     if not vert_prop:
                         for v in graph.vertices():
@@ -153,7 +156,7 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
                         for v in graph.vertices():
                             vcolor2[v] = purple
                         for v in dtktree[src].seperating_set:
-                            vcolor2[v] = blue
+                            vcolor2[v] = yellow
 
             if dynamic:
                 if not posres:
