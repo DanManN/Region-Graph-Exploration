@@ -209,7 +209,10 @@ class kTree(object):
         self.graph = graph
         self.component = component
         self.parent = parent
-        self.seperating_set = seperating_set
+        self.seperating_set = []
+        if seperating_set is not None:
+            for s in seperating_set:
+                self.seperating_set.append(s)
         self.children = []
         if children is not None:
             for child in children:
@@ -218,11 +221,11 @@ class kTree(object):
         assert isinstance(node, kTree)
         self.children.append(node)
 
-def kcompdecomp(graph,node=None,array=None,edge_prop=None,sep_sets=None):
+def kcompdecomp(graph,node=None,array=None,edge_prop=None,sep_sets=None, max_depth=500, depth = 0):
     vfilt, inv = graph.get_vertex_filter()
     if node == None:
         node = kTree(graph,graph.get_vertex_filter()[0])
-        kcompdecomp(graph,node,array,edge_prop,sep_sets)
+        kcompdecomp(graph,node,array,edge_prop,sep_sets, max_depth)
         graph.set_vertex_filter(vfilt,inv)
         return node
 
@@ -241,6 +244,8 @@ def kcompdecomp(graph,node=None,array=None,edge_prop=None,sep_sets=None):
                 edge_prop[edge] = knum
         return None
     #graph_draw(graph, vertex_fill_color=split(graph,ss))
+    if depth+1 >= max_depth:
+        return None
 
     for c in set(comps)-set([-1]):
         comp = graph.new_vertex_property('bool')
@@ -249,7 +254,7 @@ def kcompdecomp(graph,node=None,array=None,edge_prop=None,sep_sets=None):
         node.add_child(kTree(graph,comp,node))
 
     for child in node.children:
-        kcompdecomp(graph,child,array,edge_prop,sep_sets)
+        kcompdecomp(graph,child,array,edge_prop,sep_sets, max_depth, depth+1)
 
 def middleout(graph, resistances=None):
     if graph.num_edges() < 1:

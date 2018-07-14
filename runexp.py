@@ -141,16 +141,18 @@ while True:
         except (IndexError, ValueError) as err:
             print('Specifiy random graph parameters: order, min degree, max degree')
     elif parse[0] in ('kcompdecomp','k'):
+        depth = 100
         try:
             g.set_vertex_filter(gfilts[int(parse[1])])
+            depth = int(parse[2])
         except (ValueError, KeyError) as err:
-            print('No such layer: ' + parse[1])
+            print('Nan')
         except IndexError:
             pass
         comps = []
         kcomps = g.new_edge_property('int')
         ss = g.new_vertex_property('bool')
-        ktree = kcompdecomp(g,array=comps,edge_prop=kcomps,sep_sets=ss)
+        ktree = kcompdecomp(g,array=comps,edge_prop=kcomps,sep_sets=ss, max_depth=depth)
         g.clear_filters()
     elif parse[0] in ('leaves','lv'):
         try:
