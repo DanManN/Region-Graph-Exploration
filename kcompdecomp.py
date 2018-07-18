@@ -1,6 +1,7 @@
 from graph_tool.all import *
 from itertools import combinations
 from app.Helpers import kcore_decomposition
+import numpy as np
 
 def peeldecomp(graph):
     vfilt, inv = graph.get_vertex_filter()
@@ -260,6 +261,13 @@ def middleout(graph, resistances=None):
     if graph.num_edges() < 1:
         return []
 
+    comps, hist = label_components(graph)
+    maxcomp = np.argmax(hist)
+    vfilt = graph.new_vertex_property('bool')
+    for v in graph.vertices():
+        vfilt[v] = comps[v] == maxcomp
+    graph.set_vertex_filter(vfilt)
+
     # top bfs
     pseudo_d, end_pts = pseudo_diameter(graph)
     root = min(end_pts, key= lambda v : v.out_degree())
@@ -312,13 +320,13 @@ def middleout(graph, resistances=None):
     # debug
     #print(vmid)
     #print(nvmid)
-    md = min(set(degree)-set([0]))
-    for v in graph.vertices():
-        if degree[v] > md:
-            degree[v] = -1
-        else:
-            degree[v] = 1
-    graph_draw(graph, radial_tree_layout(graph, root), vertex_fill_color=degree, edge_pen_width=treemap, edge_color=resistances)
+    # md = min(set(degree)-set([0]))
+    # for v in graph.vertices():
+    #     if degree[v] > md:
+    #         degree[v] = -1
+    #     else:
+    #         degree[v] = 1
+    #graph_draw(graph, radial_tree_layout(graph, root), vertex_fill_color=degree, edge_pen_width=treemap, edge_color=resistances)
     #graph_draw(graph, radial_tree_layout(graph, newroot), vertex_fill_color=ndegree, edge_pen_width=ntreemap)
 
     return cores

@@ -211,6 +211,9 @@ while True:
                 stat = stats(g)
                 print('peel_value: ' + str(stat['peel_value']))
                 print('fixed_point?: ' + str(stat['is_fixed_point']))
+                print('diameter: ' + str(stat['diameter']['value']))
+                print('Order: ' + str(g.num_vertices()))
+                print('Size: ' + str(g.num_edges()))
         g.clear_filters()
     elif parse[0] in ('equiresistance','er'):
         try:
