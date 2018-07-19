@@ -154,7 +154,7 @@ while True:
         comps = []
         kcomps = g.new_edge_property('int')
         ss = g.new_vertex_property('bool')
-        sys.setrecursionlimit(depth+1)
+        sys.setrecursionlimit(depth*10)
         ktree = kcompdecomp(g,array=comps,edge_prop=kcomps,sep_sets=ss, max_depth=depth)
         g.clear_filters()
     elif parse[0] in ('leaves','lv'):

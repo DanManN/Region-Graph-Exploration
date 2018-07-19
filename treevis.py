@@ -166,13 +166,13 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
                     for v in graph.vertices():
                         vfilt[v] = True
                 else:
+                    vfilt = filtn
                     if old_src:
                         for e in graph.edges():
                             prev[e] = 0
                         graph.set_vertex_filter(filtold)
                         for e in graph.edges():
                             prev[e] = 3
-                        graph.set_vertex_filter(filtn)
 
                 if False: #src > 0:
                     graph.set_vertex_filter(filtp)
