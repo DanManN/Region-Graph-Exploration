@@ -165,14 +165,17 @@ while True:
         if ktree:
             dynamic = False
             savepng = False
+            pers = False
             try:
                 if 'd' in parse[1]:
                     dynamic = True
                 if 'o' in parse[1]:
                     savepng = True
+                if 'p' in parse[1]:
+                    pers = True
             except IndexError:
                 pass
-            watchTree(ktree,ktree.graph,dynamic,offscreen=savepng)
+            watchTree(ktree,ktree.graph,dynamic,offscreen=savepng,persistant=pers)
             # watchTree(ktree,ktree.graph,edge_prop=kcomps,posres=posres)
             # watchTree(ktree,ktree.graph,resistances,vresistances,posres)
         g.clear_filters()

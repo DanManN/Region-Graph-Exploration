@@ -11,12 +11,14 @@ win2 = None
 dtktree = {}
 count = 0
 
-def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=None,offscreen=False):
+def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=None,offscreen=False,persistant=False):
     try:
         global old_src, g, win, win2, dtktree, count
+        old_src = None
 
         g = Graph(directed=True)
         edges = None
+        vtext = g.new_vertex_property("string")
 
         if type(ktree) == list:
             g.set_directed(False)
@@ -40,6 +42,7 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
                 if pvertex:
                     g.add_edge(v,pvertex)
                 dtktree[v] = node
+                vtext[v] = str(len(node.seperating_set))
                 for child in node.children:
                     populateG(child,v)
 
@@ -55,11 +58,10 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
         white = [0, 0, 0, 0]
 
         vcolor = g.new_vertex_property("vector<double>")
-        vcoloro = g.new_vertex_property("vector<double>")
         for v in g.vertices():
             vcolor[v] = grey
 
-        win = GraphWindow(g, pos, geometry=(1000, 800), vertex_fill_color=vcolor)
+        win = GraphWindow(g, pos, geometry=(1000, 800), vertex_fill_color=vcolor, vertex_text=vtext)
 
         if posres:
             pos2 = posres
@@ -107,8 +109,9 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
                         pixbuf.savev(r'./screens/treeview/ktree%06d.png' % count, 'png', [], [])
                     count += 1
                 return True
-            for v in g.vertices():
-                vcolor[v] = grey
+            if not persistant:
+                for v in g.vertices():
+                    vcolor[v] = grey
             #vcolor[src] = blue
             #if src > 0:
             #    vcolor[list(src.out_edges())[0].target()] = yellow
@@ -124,6 +127,27 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
             if type(ktree) == list:
                 graph.set_vertex_filter(dtktree[src])
             else:
+                vfilt = None
+                if persistant and old_src:
+                    vfilt = graph.get_vertex_filter()[0]
+                    if not edge_prop:
+                        for e in graph.edges():
+                            ecolor[e] = grey
+                    if not vert_prop:
+                        for v in graph.vertices():
+                            vcolor2[v] = grey
+                    graph.set_vertex_filter(dtktree[src].component)
+                    for v in graph.vertices():
+                        vfilt[v] = True
+                else:
+                    if old_src:
+                        for e in graph.edges():
+                            prev[e] = 0
+                        graph.set_vertex_filter(dtktree[old_src].component)
+                        for e in graph.edges():
+                            prev[e] = 3
+                        graph.set_vertex_filter(dtktree[src].component)
+
                 if False: #src > 0:
                     graph.set_vertex_filter(dtktree[src].parent.component)
                     if not vert_prop:
@@ -158,13 +182,10 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
                         for v in dtktree[src].seperating_set:
                             vcolor2[v] = yellow
 
-                if old_src:
-                    for e in graph.edges():
-                        prev[e] = 0
-                    graph.set_vertex_filter(dtktree[old_src].component)
-                    for e in graph.edges():
-                        prev[e] = 3
-                    graph.set_vertex_filter(dtktree[src].component)
+                if vfilt:
+                    graph.set_vertex_filter(vfilt)
+
+
 
 
             old_src = src
