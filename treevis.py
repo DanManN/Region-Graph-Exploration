@@ -10,10 +10,12 @@ win = None
 win2 = None
 dtktree = {}
 count = 0
+filtp = None
+filtn = None
 
 def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=None,offscreen=False,persistant=False):
     try:
-        global old_src, g, win, win2, dtktree, count
+        global old_src, g, win, win2, dtktree, count, filtp, filtn
         old_src = None
 
         g = Graph(directed=True)
@@ -48,7 +50,13 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
 
             populateG(ktree)
             pos = radial_tree_layout(g,g.vertex(0),r=4)  # layout positions
-            graph.set_vertex_filter(dtktree[0].component)
+            # if dtktree[0].component:
+            #     filt = graph.new_vertex_property('bool')
+            #     for v in dtktree[0].component:
+            #         filt[v] = True
+            #     graph.set_vertex_filter(filt)
+            # else:
+            #     graph.set_vertex_filter(None)
 
         purple = [0.8, 0, 0.4, 1]
         grey = [0.5, 0.5, 0.5, 1]
@@ -86,7 +94,7 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
         win2 = GraphWindow(graph, pos2, geometry=(500, 400), edge_color=ecolor, vertex_fill_color=vcolor2, vertex_color=vcolor3, edge_mid_marker=prev)
 
         def update_comp(widget, event):
-            global old_src, g, win, win2, count
+            global old_src, g, win, win2, count, filtp, filtn
             src = widget.picked
             if src is None or type(src) == bool:
                 return True
@@ -124,39 +132,57 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
             widget.regenerate_surface()
             widget.queue_draw()
 
+            filtp = graph.new_vertex_property('bool')
+            filtn = graph.new_vertex_property('bool')
+            filtold = graph.new_vertex_property('bool')
             if type(ktree) == list:
-                graph.set_vertex_filter(dtktree[src])
+                for v in dtktree[src]:
+                    filtn[v] = True
+                graph.set_vertex_filter(filtn)
             else:
-                vfilt = None
+                vfilt = graph.get_vertex_filter()[0]
+                graph.clear_filters()
+                for v in graph.vertices():
+                    filtp[v] = False
+                    filtn[v] = False
+                    filtold[v] = False
+                if dtktree[src].parent:
+                    for v in dtktree[src].parent.component:
+                        filtp[v] = True
+                for v in dtktree[src].component:
+                    filtn[v] = True
+                if old_src:
+                    for v in dtktree[old_src].component:
+                        filtold[v] = True
                 if persistant and old_src:
-                    vfilt = graph.get_vertex_filter()[0]
+                    graph.set_vertex_filter(vfilt)
                     if not edge_prop:
                         for e in graph.edges():
                             ecolor[e] = grey
                     if not vert_prop:
                         for v in graph.vertices():
                             vcolor2[v] = grey
-                    graph.set_vertex_filter(dtktree[src].component)
+                    graph.set_vertex_filter(filtn)
                     for v in graph.vertices():
                         vfilt[v] = True
                 else:
                     if old_src:
                         for e in graph.edges():
                             prev[e] = 0
-                        graph.set_vertex_filter(dtktree[old_src].component)
+                        graph.set_vertex_filter(filtold)
                         for e in graph.edges():
                             prev[e] = 3
-                        graph.set_vertex_filter(dtktree[src].component)
+                        graph.set_vertex_filter(filtn)
 
                 if False: #src > 0:
-                    graph.set_vertex_filter(dtktree[src].parent.component)
+                    graph.set_vertex_filter(filtp)
                     if not vert_prop:
                         for v in graph.vertices():
                             vcolor2[v] = grey
                     if not edge_prop:
                         for e in graph.edges():
                             ecolor[e] = grey
-                    graph.set_vertex_filter(dtktree[src].component)
+                    graph.set_vertex_filter(filtn)
                     if not edge_prop:
                         for e in graph.edges():
                             ecolor[e] = purple
@@ -170,9 +196,9 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
                                 vcolor2[v] = green
                             else:
                                 vcolor2[v] = blue
-                    graph.set_vertex_filter(dtktree[src].parent.component)
+                    graph.set_vertex_filter(filtp)
                 else:
-                    graph.set_vertex_filter(dtktree[src].component)
+                    graph.set_vertex_filter(filtn)
                     if not edge_prop:
                         for e in graph.edges():
                             ecolor[e] = purple
@@ -184,9 +210,6 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
 
                 if vfilt:
                     graph.set_vertex_filter(vfilt)
-
-
-
 
             old_src = src
 

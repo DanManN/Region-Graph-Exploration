@@ -208,12 +208,13 @@ def pseudo_min_seperating_set(graph):
 class kTree(object):
     def __init__(self, graph, component=None, parent=None, seperating_set=None, children=None):
         self.graph = graph
-        self.component = component
+        self.component = []
+        if component is not None:
+            for comp in component:
+                self.component.append(int(comp))
         self.parent = parent
-        self.seperating_set = []
         if seperating_set is not None:
-            for s in seperating_set:
-                self.seperating_set.append(s)
+            self.set_seperating_set(seperating_set)
         self.children = []
         if children is not None:
             for child in children:
@@ -222,17 +223,31 @@ class kTree(object):
         assert isinstance(node, kTree)
         self.children.append(node)
 
+    def set_seperating_set(self, seperating_set):
+        assert isinstance(seperating_set, list)
+        self.seperating_set = []
+        for s in seperating_set:
+            self.seperating_set.append(int(s))
+
 def kcompdecomp(graph,node=None,array=None,edge_prop=None,sep_sets=None, max_depth=500, depth = 0):
     vfilt, inv = graph.get_vertex_filter()
     if node == None:
-        node = kTree(graph,graph.get_vertex_filter()[0])
+        node = kTree(graph,graph.get_vertices())
         kcompdecomp(graph,node,array,edge_prop,sep_sets, max_depth)
         graph.set_vertex_filter(vfilt,inv)
         return node
 
-    graph.set_vertex_filter(node.component)
+    # print(node.component)
+    if node.component:
+        graph.clear_filters()
+        nodefilt = graph.new_vertex_property('bool')
+        for v in node.component:
+            nodefilt[v] = True
+        graph.set_vertex_filter(nodefilt)
+    else:
+        graph.set_vertex_filter(None)
     ss = pseudo_min_seperating_set(graph)
-    node.seperating_set = ss
+    node.set_seperating_set(ss)
     comps = split(graph,ss)
     if sep_sets:
         for s in ss:
@@ -249,9 +264,8 @@ def kcompdecomp(graph,node=None,array=None,edge_prop=None,sep_sets=None, max_dep
         return None
 
     for c in set(comps)-set([-1]):
-        comp = graph.new_vertex_property('bool')
-        for v in find_vertex(graph,comps,c)+ss:
-            comp[v] = True
+        comp = set(find_vertex(graph,comps,c))^set(ss)
+        # print(comp)
         node.add_child(kTree(graph,comp,node))
 
     for child in node.children:

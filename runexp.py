@@ -106,13 +106,15 @@ while True:
     elif parse[0] in ('sessionsave', 'ss'):
         try:
             save_file = open(parse[1],'wb')
-            pickle.dump((g,glayers,gfilts,ktree,comps,kcomps,ss,cores,resistances,vresistances,posres,volts),save_file)
+            pickle.dump((g,glayers,gfilts,ktree),save_file)
+            # pickle.dump((g,glayers,gfilts,ktree,comps,kcomps,ss,cores,resistances,vresistances,posres,volts),save_file)
         except IndexError:
             print('Specifiy save file!')
     elif parse[0] in ('sessionload', 'sl'):
         try:
             load_file = open(parse[1],'rb')
-            g,glayers,gfilts,ktree,comps,kcomps,ss,cores,resistances,vresistances,posres,volts = pickle.load(load_file)
+            g,glayers,gfilts,ktree = pickle.load(load_file)
+            # g,glayers,gfilts,ktree,comps,kcomps,ss,cores,resistances,vresistances,posres,volts = pickle.load(load_file)
         except IndexError:
             print('Specifiy save file!')
     elif parse[0] in ('load', 'ld'):
@@ -152,6 +154,7 @@ while True:
         comps = []
         kcomps = g.new_edge_property('int')
         ss = g.new_vertex_property('bool')
+        sys.setrecursionlimit(depth+1)
         ktree = kcompdecomp(g,array=comps,edge_prop=kcomps,sep_sets=ss, max_depth=depth)
         g.clear_filters()
     elif parse[0] in ('leaves','lv'):
