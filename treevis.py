@@ -13,7 +13,7 @@ count = 0
 filtp = None
 filtn = None
 
-def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=None,offscreen=False,persistant=False):
+def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=None,offscreen=False,persistant=False,centered=False):
     try:
         global old_src, g, win, win2, dtktree, count, filtp, filtn
         old_src = None
@@ -75,7 +75,7 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
             pos2 = posres
         else:
             if dynamic:
-                pos2 = arf_layout(graph)
+                pos2 = arf_layout(graph, d=0.1)
             else:
                 pos2 = arf_layout(graph, d=4)
 
@@ -135,6 +135,7 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
             filtp = graph.new_vertex_property('bool')
             filtn = graph.new_vertex_property('bool')
             filtold = graph.new_vertex_property('bool')
+            filtseps = graph.new_vertex_property('bool')
             if type(ktree) == list:
                 for v in dtktree[src]:
                     filtn[v] = True
@@ -149,6 +150,8 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
                 if dtktree[src].parent:
                     for v in dtktree[src].parent.component:
                         filtp[v] = True
+                for v in dtktree[src].seperating_set:
+                    filtseps[v] = True
                 for v in dtktree[src].component:
                     filtn[v] = True
                 if old_src:
@@ -205,8 +208,13 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
                     if not vert_prop:
                         for v in graph.vertices():
                             vcolor2[v] = purple
+                    if dtktree[src].seperating_set:
+                        graph.set_vertex_filter(filtseps)
+                        for e in graph.edges():
+                            ecolor[e] = yellow
                         for v in dtktree[src].seperating_set:
                             vcolor2[v] = yellow
+                        graph.set_vertex_filter(filtn)
 
                 if vfilt:
                     graph.set_vertex_filter(vfilt)
@@ -215,7 +223,15 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
 
             if dynamic:
                 if not posres:
-                    arf_layout(graph, pos=pos2, d=2.2)
+                    arf_layout(graph, pos=pos2, d=2)
+                    if centered:
+                        center = np.zeros(2)
+                        for x in pos2:
+                            center += x
+                        center /= graph.num_vertices()
+                        for v in dtktree[src].seperating_set:
+                            pos2[v] = center
+                        arf_layout(graph, pos=pos2, d=1, max_iter=6)
                 win2.graph.fit_to_window(ink=True)
             win2.graph.regenerate_surface()
             win2.graph.queue_draw()
