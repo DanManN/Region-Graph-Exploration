@@ -194,7 +194,22 @@ while True:
         g.clear_filters()
     elif parse[0] in ('decompanimation','da'):
         if ktree:
-           watchdecomp(ktree)
+            dynamic = False
+            center = False
+            savepng = False
+            pers = False
+            try:
+                if 'd' in parse[1]:
+                    dynamic = True
+                if 'c' in parse[1]:
+                    center = True
+                if 'o' in parse[1]:
+                    savepng = True
+                if 'p' in parse[1]:
+                    pers = True
+            except IndexError:
+                pass
+            watchdecomp(ktree,ktree.graph,dynamic,offscreen=savepng,persistant=pers,centered=center)
         g.clear_filters()
     elif parse[0] in ('kcomponentview','kcv'):
         if kcomps:
