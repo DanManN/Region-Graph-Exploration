@@ -13,7 +13,7 @@ count = 0
 filtp = None
 filtn = None
 
-def watchdecomp(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=None,offscreen=False,persistant=False,centered=False):
+def watchdecomp(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=None,offscreen=False,persistant=False,centered=False,last=None):
     try:
         global old_src, g, win, win2, dtktree, count, filtp, filtn
         old_src = None
@@ -27,7 +27,7 @@ def watchdecomp(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=N
             global dtktree
             v = g.add_vertex()
             if pvertex:
-                g.add_edge(v,pvertex)
+                g.add_edge(pvertex,v)
             dtktree[v] = node
             vtext[v] = str(len(node.seperating_set))
             for child in node.children:
@@ -42,7 +42,11 @@ def watchdecomp(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=N
         #     graph.set_vertex_filter(filt)
         # else:
         #     graph.set_vertex_filter(None)
-        klist = xrange(g.num_vertices()-1,-1,-1)
+        if last:
+            klist = xrange(last,-1,-1)
+        else:
+            klist = xrange(g.num_vertices()-1,-1,-1)
+        # klist = list(reversed(dfs_iterator(g,0,array=True)))
 
         purple = [0.8, 0, 0.4, 1]
         grey = [0.5, 0.5, 0.5, 1]
@@ -93,8 +97,8 @@ def watchdecomp(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=N
             #    vcolor[list(src.out_edges())[0].target()] = yellow
             def colordown(v):
                 vcolor[v] = purple
-                for e in v.in_edges():
-                    colordown(e.source())
+                for e in v.out_edges():
+                    colordown(e.target())
             colordown(src)
 
             win.graph.regenerate_surface()

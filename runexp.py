@@ -198,6 +198,7 @@ while True:
             center = False
             savepng = False
             pers = False
+            last = None
             try:
                 if 'd' in parse[1]:
                     dynamic = True
@@ -207,9 +208,12 @@ while True:
                     savepng = True
                 if 'p' in parse[1]:
                     pers = True
+                last = int(parse[2])
             except IndexError:
                 pass
-            watchdecomp(ktree,ktree.graph,dynamic,offscreen=savepng,persistant=pers,centered=center)
+            except ValueError:
+                print('Nan')
+            watchdecomp(ktree,ktree.graph,dynamic,offscreen=savepng,persistant=pers,centered=center,last=last)
         g.clear_filters()
     elif parse[0] in ('kcomponentview','kcv'):
         if kcomps:
