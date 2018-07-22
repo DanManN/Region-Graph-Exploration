@@ -172,6 +172,7 @@ while True:
             center = False
             savepng = False
             pers = False
+            edgemark = False
             try:
                 if 'd' in parse[1]:
                     dynamic = True
@@ -181,9 +182,11 @@ while True:
                     savepng = True
                 if 'p' in parse[1]:
                     pers = True
+                if 'e' in parse[1]:
+                    edgemark = True
             except IndexError:
                 pass
-            watchTree(ktree,ktree.graph,dynamic,offscreen=savepng,persistant=pers,centered=center)
+            watchTree(ktree,ktree.graph,dynamic,offscreen=savepng,persistant=pers,centered=center,edgemark=edgemark)
             # watchTree(ktree,ktree.graph,edge_prop=kcomps,posres=posres)
             # watchTree(ktree,ktree.graph,resistances,vresistances,posres)
         g.clear_filters()
@@ -198,6 +201,7 @@ while True:
             center = False
             savepng = False
             pers = False
+            edgemark = False
             last = None
             try:
                 if 'd' in parse[1]:
@@ -208,12 +212,14 @@ while True:
                     savepng = True
                 if 'p' in parse[1]:
                     pers = True
+                if 'e' in parse[1]:
+                    edgemark = True
                 last = int(parse[2])
             except IndexError:
                 pass
             except ValueError:
                 print('Nan')
-            watchdecomp(ktree,ktree.graph,dynamic,offscreen=savepng,persistant=pers,centered=center,last=last)
+            watchdecomp(ktree,ktree.graph,dynamic,offscreen=savepng,persistant=pers,centered=center,last=last,edgemark=edgemark)
         g.clear_filters()
     elif parse[0] in ('kcomponentview','kcv'):
         if kcomps:

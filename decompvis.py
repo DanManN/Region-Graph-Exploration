@@ -13,7 +13,7 @@ count = 0
 filtp = None
 filtn = None
 
-def watchdecomp(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=None,offscreen=False,persistant=False,centered=False,last=None):
+def watchdecomp(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=None,offscreen=False,persistant=False,centered=False,last=None,edgemark=False):
     try:
         global old_src, g, win, win2, dtktree, count, filtp, filtn
         old_src = None
@@ -88,6 +88,12 @@ def watchdecomp(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=N
             try:
                 src = g.vertex(klist[count])
             except IndexError:
+                if offscreen:
+                    #pixbuf = Gdk.pixbuf_get_from_window(win.graph.get_window(), 0, 0, 630, 1000)
+                    pixbuf2 = Gdk.pixbuf_get_from_window(win2.graph.get_window(), 0, 0, 624, 1000)
+                    #print(src)
+                    pixbuf2.savev(r'./screens/frames/kcomp%06d.png' % count, 'png', [], [])
+                    #pixbuf.savev(r'./screens/frames/ktree%06d.png' % count, 'png', [], [])
                 return False
             if not persistant:
                 for v in g.vertices():
@@ -137,7 +143,7 @@ def watchdecomp(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=N
                     vfilt[v] = True
             else:
                 vfilt = filtn
-                if old_src:
+                if old_src and edgemark:
                     for e in graph.edges():
                         prev[e] = 0
                     graph.set_vertex_filter(filtold)
@@ -203,10 +209,8 @@ def watchdecomp(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=N
             win2.graph.regenerate_surface()
             win2.graph.queue_draw()
             if offscreen:
-                window = widget.get_window()
-                pixbuf = Gdk.pixbuf_get_from_window(window, 0, 0, 1000, 1000)
-                pixbuf2 = Gdk.pixbuf_get_from_window(win2.graph.get_window(), 0, 0, 1000, 1000)
-                print(src)
+                pixbuf = Gdk.pixbuf_get_from_window(win.graph.get_window(), 0, 0, 630, 1000)
+                pixbuf2 = Gdk.pixbuf_get_from_window(win2.graph.get_window(), 0, 0, 624, 1000)
                 pixbuf2.savev(r'./screens/frames/kcomp%06d.png' % count, 'png', [], [])
                 pixbuf.savev(r'./screens/frames/ktree%06d.png' % count, 'png', [], [])
             count += 1

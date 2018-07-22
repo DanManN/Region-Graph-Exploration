@@ -13,7 +13,7 @@ count = 0
 filtp = None
 filtn = None
 
-def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=None,offscreen=False,persistant=False,centered=False):
+def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=None,offscreen=False,persistant=False,centered=False,edgemark=False):
     try:
         global old_src, g, win, win2, dtktree, count, filtp, filtn
         old_src = None
@@ -170,7 +170,7 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
                         vfilt[v] = True
                 else:
                     vfilt = filtn
-                    if old_src:
+                    if old_src and edgemark:
                         for e in graph.edges():
                             prev[e] = 0
                         graph.set_vertex_filter(filtold)
