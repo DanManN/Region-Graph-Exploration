@@ -50,13 +50,13 @@ def watchTree(ktree,graph,dynamic=False,edge_prop=None,vert_prop=None,posres=Non
 
             populateG(ktree)
             pos = radial_tree_layout(g,g.vertex(0),r=4)  # layout positions
-            # if dtktree[0].component:
-            #     filt = graph.new_vertex_property('bool')
-            #     for v in dtktree[0].component:
-            #         filt[v] = True
-            #     graph.set_vertex_filter(filt)
-            # else:
-            #     graph.set_vertex_filter(None)
+            if dtktree[0].component:
+                filt = graph.new_vertex_property('bool')
+                for v in dtktree[0].component:
+                    filt[v] = True
+                graph.set_vertex_filter(filt)
+            else:
+                graph.set_vertex_filter(None)
 
         purple = [0.8, 0, 0.4, 1]
         grey = [0.5, 0.5, 0.5, 1]

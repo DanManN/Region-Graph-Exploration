@@ -45,26 +45,44 @@ def pseudo_min_v_cut(g):
             ss.add(backpoint[e.target()])
     return list(ss)
 
-def flowdecomp(graph,node=None):
+def flowdecomp(graph,node=None,array=None,edge_prop=None,sep_sets=None, max_depth=500, depth = 0):
     vfilt, inv = graph.get_vertex_filter()
     if node == None:
-        node = kTree(graph,graph.get_vertex_filter()[0])
-        flowdecomp(graph,node)
+        node = kTree(graph,graph.get_vertices())
+        flowdecomp(graph,node,array,edge_prop,sep_sets, max_depth)
         graph.set_vertex_filter(vfilt,inv)
         return node
 
-    graph.set_vertex_filter(node.component)
+    # print(node.component)
+    if node.component:
+        graph.clear_filters()
+        nodefilt = graph.new_vertex_property('bool')
+        for v in node.component:
+            nodefilt[v] = True
+        graph.set_vertex_filter(nodefilt)
+    else:
+        graph.set_vertex_filter(None)
     ss = pseudo_min_v_cut(graph)
+    node.set_seperating_set(ss)
     comps = split(graph,ss)
+    if sep_sets:
+        for s in ss:
+            sep_sets[s] = True
     if max(comps) == 0:
+        if array is not None: array.append(node.component)
+        if edge_prop is not None:
+            knum = max(edge_prop.a)+1
+            for edge in graph.edges():
+                edge_prop[edge] = knum
         return None
     #graph_draw(graph, vertex_fill_color=split(graph,ss))
+    if depth+1 >= max_depth:
+        return None
 
     for c in set(comps)-set([-1]):
-        comp = graph.new_vertex_property('bool')
-        for v in find_vertex(graph,comps,c)+ss:
-            comp[v] = True
-        node.add_child(kTree(graph,comp))
+        comp = set(find_vertex(graph,comps,c))^set(ss)
+        # print(comp)
+        node.add_child(kTree(graph,comp,node))
 
     for child in node.children:
-        flowdecomp(graph,child)
+        flowdecomp(graph,child,array,edge_prop,sep_sets, max_depth, depth+1)
