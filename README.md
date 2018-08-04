@@ -96,8 +96,7 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 ## Authors
 
 * **Parth Parikh** - *05/2017 - 08/2017* - [prparikh02](https://github.com/prparikh02)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+* **Daniel Nakhimovich ** - *06/2018 - 8/2018* - [DanManN](https://gitlab.com/DanManN)
 
 <!--
 ## License
