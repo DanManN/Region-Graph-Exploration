@@ -74,6 +74,52 @@ def statistics(G):
         'peel_counts': peel_counts,
     }
 
+def edgecore_decomposition(G, vlist=[], elist=[]):
+    """Peform edgecore decomposition on subgraph of G
+    induced by input vertex and edge indices.
+
+    Args:
+        G (graph_tool.Graph): The graph instance.
+        vlist (list): List of vertex indices to induce upon.
+        elist (list): List of edge indices to induce upon.
+
+    Returns:
+        Dict with keys as kcore values and values as vertex IDs.
+    """
+
+    # initiate filters, if necessary
+    if vlist or elist:
+        vp = G.new_vp('bool', vals=False)
+        ep = G.new_ep('bool', vals=False)
+        if vlist is []:
+            vlist = np.ones_like(vp.a)
+        elif elist is []:
+            elist = np.ones_like(ep.a)
+        vp.a[vlist] = True
+        ep.a[elist] = True
+        G.set_vertex_filter(vp)
+        G.set_edge_filter(ep)
+
+    cmd = './app/bin/graph_peeling.bin -t edge -o core'
+    p = Popen([cmd], shell=True, stdout=PIPE, stdin=PIPE)
+    for e in G.edges():
+        p.stdin.write('{} {}\n'.format(e.source(), e.target()))
+        p.stdin.flush()
+    p.stdin.close()
+
+    peel_partition = {}
+    while True:
+        line = p.stdout.readline()
+        if line == '':
+            break
+        if 'peel' in line:
+            continue
+        v1,v2,peel = line.split(' ')
+        peel = int(peel)
+        edge = [(v1,v2)]
+        peel_partition[peel] = peel_partition.get(peel, []) + edge
+
+    return peel_partition
 
 def kcore_decomposition(G, vlist=[], elist=[]):
     """Peform kcore decomposition (aka graph vertex peeling) on subgraph of G

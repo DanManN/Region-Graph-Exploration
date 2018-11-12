@@ -22,12 +22,9 @@ def peel(graph):
     kd = peeldecomp(graph)
     layers = {}
     filts = {}
-    for layer,vertices in kd.iteritems():
-        vfilt = g.new_vertex_property('bool')
-        for v in vertices:
-            vfilt[int(v)] = True
-        layers[layer] = GraphView(g, vfilt)
-        filts[layer] = vfilt
+    for layer,filt in kd.iteritems():
+        layers[layer] = GraphView(g, efilt=filt)
+        filts[layer] = filt
     return layers,filts
 
 def loadFile(a):
@@ -88,7 +85,10 @@ def walk(tree,info):
     g.clear_filters()
 
 while True:
-    cmd = raw_input("(k) $ ")
+    try:
+        cmd = raw_input("(k) $ ")
+    except EOFError:
+        break;
     if cmd in ('quit','q','exit'):
         break
     if cmd == '':
@@ -147,7 +147,7 @@ while True:
     elif parse[0] in ('kcompdecomp','k'):
         depth = 100
         try:
-            g.set_vertex_filter(gfilts[int(parse[1])])
+            g.set_edge_filter(gfilts[int(parse[1])])
             depth = int(parse[2])
         except (ValueError, KeyError) as err:
             print('Nan')
@@ -228,7 +228,7 @@ while True:
         g.clear_filters()
     elif parse[0] in ('cores','c'):
         try:
-            g.set_vertex_filter(gfilts[int(parse[1])])
+            g.set_edge_filter(gfilts[int(parse[1])])
         except IndexError:
             pass
         except (ValueError, KeyError) as err:
@@ -253,7 +253,7 @@ while True:
         g.clear_filters()
     elif parse[0] in ('equiresistance','er'):
         try:
-            g.set_vertex_filter(gfilts[int(parse[1])])
+            g.set_edge_filter(gfilts[int(parse[1])])
         except IndexError:
             pass
         except (ValueError, KeyError) as err:
@@ -279,7 +279,7 @@ while True:
             print('No such layer: ' + parse[1])
     elif parse[0] in ('mnasort','ms'):
         try:
-            g.set_vertex_filter(gfilts[int(parse[1])])
+            g.set_edge_filter(gfilts[int(parse[1])])
         except IndexError:
             pass
         except (ValueError, KeyError) as err:
@@ -294,7 +294,7 @@ while True:
         g.clear_filters()
     elif parse[0] in ('voltagesort','vs'):
         try:
-            g.set_vertex_filter(gfilts[int(parse[1])])
+            g.set_edge_filter(gfilts[int(parse[1])])
         except IndexError:
             pass
         except (ValueError, KeyError) as err:
@@ -308,7 +308,7 @@ while True:
         graph_draw(g, posres)
     elif parse[0] in ('flow','f'):
         try:
-            g.set_vertex_filter(gfilts[int(parse[1])])
+            g.set_edge_filter(gfilts[int(parse[1])])
         except IndexError:
             pass
         except (ValueError, KeyError) as err:

@@ -1,20 +1,27 @@
 from graph_tool.all import *
 from itertools import combinations
 from app.Helpers import kcore_decomposition
+from app.Helpers import edgecore_decomposition
 import numpy as np
 
 def peeldecomp(graph):
     vfilt, inv = graph.get_vertex_filter()
-    core = kcore_decomposition(graph)
     kcores = {}
-    while len(core) >= 1:
-        ind = max(core)
-        kcores[ind] = core[ind]
-        filt = graph.new_vertex_property('bool', True)
-        for v in core[ind]:
-            filt[v] = False
-        graph.set_vertex_filter(filt)
-        core = kcore_decomposition(graph)
+    # core = kcore_decomposition(graph)
+    # while len(core) >= 1:
+    #     ind = max(core)
+    #     kcores[ind] = core[ind]
+    #     filt = graph.new_vertex_property('bool', True)
+    #     for v in core[ind]:
+    #         filt[v] = False
+    #     graph.set_vertex_filter(filt)
+    #     core = kcore_decomposition(graph)
+    cores = edgecore_decomposition(graph)
+    for peel,layer in cores.iteritems():
+        filt = graph.new_edge_property('bool')
+        for edge in layer:
+            filt[edge] = True
+        kcores[peel] = filt;
 
     graph.set_vertex_filter(vfilt,inv)
     return kcores

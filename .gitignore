@@ -10,7 +10,7 @@ graphs.txt
 *.txt
 *.gt
 *.pkl
-temp
+*temp*
 *.zip
 screens
 proteindata
